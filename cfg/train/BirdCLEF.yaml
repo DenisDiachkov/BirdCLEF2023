@@ -1,11 +1,11 @@
 mode: !!str 'train'
 wall: !!bool False
 seed: &seed !!int 42
-experiment_name: &experiment_name Example2
+experiment_name: &experiment_name Test
 resume_path: null
 
 logger_params:
-  project: !!str 'sample_project'
+  project: !!str 'BirdCLEF2023'
   name: *experiment_name
   version: null
   save_dir: '/tmp/wandb/'
@@ -13,10 +13,11 @@ logger_params:
 
 trainer_params:
   deterministic: !!bool True
-  devices: [0, 1]
+  devices: [0]
   accelerator: !!str 'cuda'
   num_sanity_val_steps: !!int 1
-  max_epochs: !!int 100
+  max_epochs: 100
+  precision: 16
 trainer_callbacks: [
   {
     callback: pytorch_lightning.callbacks.early_stopping.EarlyStopping,
@@ -41,52 +42,64 @@ trainer_callbacks: [
   }
 ]
 
-lightning_module: module.BaseModule
+lightning_module: module.BirdCLEFModule
 lightning_module_params:
-  model: model.sample_model.SampleModel
+  model: model.bird_clef_model.BirdCLEFModel
   model_params:
-    in_features: !!int 10
-    out_features: !!int 10
-  optimizer: torch.optim.Adam
+    n_classes: 264 ##### refactor this
+    sample_rate: 32000
+    window_size: 2048
+    f_min: 16
+    f_max: 16386
+    power: 2.0
+    mel_bins: 256
+    hop_size: 512
+    top_db: 80.0
+    backbone: resnet34
+    pretrained: True
+    pretrained_weights: null
+    in_channels: 1
+    mix_beta: 1.0
+    wav_crop_len: 30.0
+    mel_norm: False
+    mixup: False
+    mixup2: False
+  optimizer: torch.optim.AdamW
   optimizer_params:
-    lr: !!float 0.001
-    betas: [!!float 0.9, !!float 0.999]
-    eps: !!float 1e-08
-    weight_decay: !!float 0.0001
-    amsgrad: !!bool False
-  scheduler: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
+    lr: !!float 0.0001
+    weight_decay: !!float 0.0
+  scheduler: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts ########################## Change
   scheduler_params:
     T_0: !!int 10
     T_mult: !!int 2
     eta_min: !!float 0.00001
     last_epoch: !!int -1
-  criterion: criterion.multi_criterion.MultiCriterion
+  criterion: criterion.instance_weighted_criterion.InstanceWeightedCriterion
   criterion_params: { 
-    criterions: [ torch.nn.MSELoss,torch.nn.L1Loss ],
-    criterion_weights: [!!float 1.0, !!float 1.0],
+    criterion: torch.nn.BCEWithLogitsLoss,
   }
 
 
 datamodule_params:
-  dataset: dataset.sample_dataset.SampleDataset
+  dataset: dataset.dataset.BirdCLEFDataset
   dataset_params:
-    in_features: !!int 10
-    out_features: !!int 10
+    data_folder: input/birdclef-2023/train_audio
+    wav_crop_len: 5.0
+    sample_rate: 32000
+    albumentations: null
   train_dataset_params:
-    num_samples: !!int 1000
-  val_dataset_params:
-    num_samples: !!int 100
+    min_rating: 2.0
 
   dataloader_params:
+    shuffle: !!bool True
+    num_workers: !!int 1
+    drop_last: !!bool True
+    sampler: null
+  train_dataloader_params:
     batch_size: !!int 1
     shuffle: !!bool True
-    num_workers: !!int 8
-    pin_memory: !!bool True
-    drop_last: !!bool True
-  train_dataloader_params:
-    shuffle: !!bool True
   val_dataloader_params:
+    batch_size: !!int 1
     shuffle: !!bool False
-    drop_last: !!bool True
+    drop_last: !!bool False
 
-  

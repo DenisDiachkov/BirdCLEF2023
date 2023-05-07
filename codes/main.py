@@ -11,7 +11,7 @@ from train import train
 def parse_cfg():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--cfg", default='cfg/train/SampleCFG.yaml', type=str
+        "--cfg", default='cfg/train/BirdCLEF.yaml', type=str
     )
     args, left_argv = parser.parse_known_args()
     cfg = sconf.Config(args.cfg)
