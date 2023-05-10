@@ -13,7 +13,7 @@ logger_params:
 
 trainer_params:
   deterministic: !!bool True
-  devices: [0]
+  devices: [0, 1]
   accelerator: !!str 'cuda'
   num_sanity_val_steps: !!int 1
   max_epochs: 100
@@ -90,19 +90,19 @@ datamodule_params:
     wav_crop_len: *wav_crop_len
     sample_rate: *sample_rate
     albumentations: null
+    duration_preload: True
   train_dataset_params:
     min_rating: 2.0
 
   dataloader_params:
     shuffle: !!bool True
     num_workers: !!int 8
-    drop_last: !!bool True
     sampler: null
   train_dataloader_params:
-    batch_size: !!int 64
+    batch_size: !!int 32
+    drop_last: !!bool True
     shuffle: !!bool True
   val_dataloader_params:
-    batch_size: !!int 16
+    batch_size: !!int 8
     shuffle: !!bool False
-    drop_last: !!bool False
 

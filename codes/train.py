@@ -36,7 +36,6 @@ class LogCodeAndConfigCallback(pl.Callback):
 
 
 def train(cfg: dict):
-    os.environ['CUDA_VISIBLE_DEVICES'] = "0"
     if not os.path.exists(cfg.experiment_path):
         os.makedirs(cfg.experiment_path)
     logger = _Wandblogger(**cfg.logger_params)

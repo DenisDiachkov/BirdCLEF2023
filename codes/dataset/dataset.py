@@ -7,6 +7,7 @@ import librosa
 import random
 import soundfile as sf
 import ast
+from tqdm import tqdm
 
 DEFAULT_BIRD_NAMES = ['abethr1', 'abhori1', 'abythr1', 'afbfly1', 'afdfly1', 'afecuc1',
        'affeag1', 'afgfly1', 'afghor1', 'afmdov1', 'afpfly1', 'afpkin1',
@@ -67,7 +68,7 @@ class BirdCLEFDataset(Dataset):
     ):
         self.mode = mode
         self.data_folder = data_folder
-        self.data_frame = pd.read_csv(os.path.join(self.data_folder, "..", "train_metadata.csv"))
+        self.data_frame = pd.read_csv(os.path.join(self.data_folder, "..", "new_train_metadata.csv"))
         if self.mode == "train":
             self.data_frame = self.data_frame[self.data_frame["rating"] >= kwargs["min_rating"]]
         self.filenames = self.data_frame["filename"].unique()
@@ -76,11 +77,17 @@ class BirdCLEFDataset(Dataset):
         self.n_classes = len(bird_names)
         self.wav_crop_len = wav_crop_len
         self.sample_rate = sample_rate
-
         self.data_frame = self.setup_data_frame()
-
         self.albumentations_audio = albumentations
-
+    
+    def get_duration(self, idx):
+        if "duration" in self.data_frame.iloc[idx] and not np.isnan(self.data_frame.iloc[idx]["duration"]):
+            return self.data_frame.iloc[idx]["duration"]
+        duration = BirdCLEFDataset.get_file_duration(
+            os.path.join(self.data_folder, self.data_frame.iloc[idx]["filename"])
+        )
+        return duration 
+    
     def setup_data_frame(self):
         data_frame = self.data_frame.copy()
 
@@ -103,7 +110,7 @@ class BirdCLEFDataset(Dataset):
             data_frame = data_frame.groupby("filename")
 
         return data_frame
-    
+
     @staticmethod
     def get_file_duration(file_path):
         sound, sr = librosa.load(file_path)
@@ -134,7 +141,7 @@ class BirdCLEFDataset(Dataset):
             weight = 1
         if self.mode == "train":
             #wav_len_sec = wav_len / self.sample_rate
-            wav_len_sec = BirdCLEFDataset.get_file_duration(os.path.join(self.data_folder, fn))
+            wav_len_sec = self.get_duration(idx)
             duration = self.wav_crop_len
             max_offset = wav_len_sec - duration
             max_offset = max(max_offset, 1)

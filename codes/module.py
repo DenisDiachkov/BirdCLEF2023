@@ -40,18 +40,18 @@ class BaseModule(LightningModule, ABC):
     def training_step(self, batch, batch_idx: int):
         batch['output'] = self(batch)
         loss = self.calc_loss(batch).mean()
-        self.log('train_loss', loss, prog_bar=True)
+        self.log('train_loss', loss, prog_bar=True, sync_dist=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         batch['output'] = self(batch)
         loss = self.calc_loss(batch).mean()
-        self.log('val_loss', loss, prog_bar=True)
+        self.log('val_loss', loss, prog_bar=True, sync_dist=True)
     
     def test_step(self, batch, batch_idx):
         batch['output'] = self(batch)
         loss = self.calc_loss(batch).mean()
-        self.log('test_loss', loss, prog_bar=True)
+        self.log('test_loss', loss, prog_bar=True, sync_dist=True)
     
     def configure_optimizers(self):
         if self.optimizer is None:
