@@ -47,7 +47,7 @@ lightning_module_params:
   model: model.bird_clef_model.BirdCLEFModel
   model_params:
     n_classes: 264 ##### refactor this
-    sample_rate: 32000
+    sample_rate: &sample_rate !!int 32000
     window_size: 2048
     f_min: 16
     f_max: 16386
@@ -60,9 +60,9 @@ lightning_module_params:
     pretrained_weights: null
     in_channels: 1
     mix_beta: 1.0
-    wav_crop_len: 30.0
+    wav_crop_len: &wav_crop_len !!int 5
     mel_norm: False
-    mixup: False
+    mixup1: True
     mixup2: False
   optimizer: torch.optim.AdamW
   optimizer_params:
@@ -76,7 +76,10 @@ lightning_module_params:
     last_epoch: !!int -1
   criterion: criterion.instance_weighted_criterion.InstanceWeightedCriterion
   criterion_params: { 
-    criterion: torch.nn.BCEWithLogitsLoss,
+    criterion: {
+      criterion: torch.nn.BCEWithLogitsLoss,
+      criterion_params: {reduction: 'mean'}
+    }
   }
 
 
@@ -84,22 +87,22 @@ datamodule_params:
   dataset: dataset.dataset.BirdCLEFDataset
   dataset_params:
     data_folder: input/birdclef-2023/train_audio
-    wav_crop_len: 5.0
-    sample_rate: 32000
+    wav_crop_len: *wav_crop_len
+    sample_rate: *sample_rate
     albumentations: null
   train_dataset_params:
     min_rating: 2.0
 
   dataloader_params:
     shuffle: !!bool True
-    num_workers: !!int 1
+    num_workers: !!int 8
     drop_last: !!bool True
     sampler: null
   train_dataloader_params:
-    batch_size: !!int 1
+    batch_size: !!int 64
     shuffle: !!bool True
   val_dataloader_params:
-    batch_size: !!int 1
+    batch_size: !!int 16
     shuffle: !!bool False
     drop_last: !!bool False
 

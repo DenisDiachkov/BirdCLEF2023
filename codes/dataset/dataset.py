@@ -68,9 +68,9 @@ class BirdCLEFDataset(Dataset):
         self.mode = mode
         self.data_folder = data_folder
         self.data_frame = pd.read_csv(os.path.join(self.data_folder, "..", "train_metadata.csv"))
-        self.filenames = self.data_frame["filename"].unique()
         if self.mode == "train":
             self.data_frame = self.data_frame[self.data_frame["rating"] >= kwargs["min_rating"]]
+        self.filenames = self.data_frame["filename"].unique()
 
         self.bird2id = {bird: idx for idx, bird in enumerate(bird_names)}
         self.n_classes = len(bird_names)
@@ -113,11 +113,6 @@ class BirdCLEFDataset(Dataset):
     def __getitem__(self, idx):
 
         if self.mode == "train":
-            print()
-            print(idx)
-            print(len(self.data_frame))
-            print(len(self))
-            print()
             row = self.data_frame.iloc[idx]
             fn = row["filename"]
             label = row[[f"t{i}" for i in range(self.n_classes)]].values
@@ -137,7 +132,6 @@ class BirdCLEFDataset(Dataset):
                 label = label.squeeze(0)
             fold = -1
             weight = 1
-        print(parts)
         if self.mode == "train":
             #wav_len_sec = wav_len / self.sample_rate
             wav_len_sec = BirdCLEFDataset.get_file_duration(os.path.join(self.data_folder, fn))
@@ -147,13 +141,12 @@ class BirdCLEFDataset(Dataset):
             offset = np.random.randint(max_offset)
         else:
             offset = 0.0
-            duration = None
+            duration = self.wav_crop_len
 
         wav = self.load_one(fn, offset, duration)
-
         if wav.shape[0] < (self.wav_crop_len * self.sample_rate):
-            pad = self.wav_crop_len * self.sample_rate - wav.shape[0]
-            wav = np.pad(wav, (0, pad.astype(np.int32)))
+            pad = int(self.wav_crop_len * self.sample_rate - wav.shape[0])
+            wav = np.pad(wav, (0, pad))
 
         # wav = self.albumentations_audio(samples=wav, sample_rate=self.sample_rate)["data"]
         # if self.mode == "train":
@@ -169,7 +162,7 @@ class BirdCLEFDataset(Dataset):
             wav_tensor = wav_tensor[: n_samples // parts * parts].reshape(
                 parts, n_samples // parts
             )
-        print(wav_tensor.shape)
+            raise Exception("NOT IMPLEMENTED")
         feature_dict = {
             "input": wav_tensor,
             "target": torch.tensor(label.astype(np.float32)),

@@ -14,6 +14,5 @@ class InstanceWeightedCriterion(nn.Module):
             self.criterion = criterion
     
     def forward(self, x, y, weight):
-        print(x.shape, y.shape, weight.shape)
         return self.criterion(x, y) * weight
     

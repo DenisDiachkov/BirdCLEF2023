@@ -31,7 +31,7 @@ class BirdCLEFModel(nn.Module):
         mix_beta=0.2,
         wav_crop_len=5,
         mel_norm=False,
-        mixup=False,
+        mixup1=False,
         mixup2=False,
     ):
         super(BirdCLEFModel, self).__init__()
@@ -76,7 +76,8 @@ class BirdCLEFModel(nn.Module):
             self.load_state_dict(sd, strict=True)
             print("weights loaded from", pretrained_weights)
         self.loss_fn = nn.BCEWithLogitsLoss(reduction="none")
-
+        self.mixup1 = mixup1
+        self.mixup2 = mixup2
         self.mixup = Mixup(mix_beta=mix_beta)
 
         self.factor = int(wav_crop_len / 5.0)
@@ -91,7 +92,7 @@ class BirdCLEFModel(nn.Module):
                 bs, parts, time = x.shape
             elif len(x.shape) == 2:
                 bs, time = x.shape
-                parts = 1
+                parts = bs
             else:
                 raise ValueError("NUIMDAAAAA")
             x = x.reshape(parts, time)
@@ -119,7 +120,7 @@ class BirdCLEFModel(nn.Module):
             x = x.permute(0, 2, 1, 3)
             x = x.reshape(b // self.factor, self.factor * t, c, f)
 
-            if self.mixup:
+            if self.mixup1:
                 x, y, weight = self.mixup(x, y, weight)
             if self.mixup2:
                 x, y, weight = self.mixup(x, y, weight)
@@ -138,9 +139,5 @@ class BirdCLEFModel(nn.Module):
         x = self.global_pool(x)
         x = x[:, :, 0, 0]
         logits = self.head_23(x)
-
-        # loss = self.loss_fn(logits, y)
-        # loss = (loss.mean(dim=1) * weight) / weight.sum()
-        # loss = loss.sum()
 
         return {"logits": logits, "target": y}
