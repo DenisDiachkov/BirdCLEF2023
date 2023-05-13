@@ -59,7 +59,8 @@ class BirdCLEFDataset(Dataset):
     def __init__(
         self, 
         mode, 
-        data_folder,
+        csv_path,
+        audio_folder,
         wav_crop_len,
         sample_rate,
         albumentations,
@@ -67,8 +68,9 @@ class BirdCLEFDataset(Dataset):
         **kwargs
     ):
         self.mode = mode
-        self.data_folder = data_folder
-        self.data_frame = pd.read_csv(os.path.join(self.data_folder, "..", "new_train_metadata.csv"))
+        self.audio_folder = audio_folder
+        if csv_path is not None:
+            self.data_frame = pd.read_csv(csv_path)
         if self.mode == "train":
             self.data_frame = self.data_frame[self.data_frame["rating"] >= kwargs["min_rating"]]
         self.filenames = self.data_frame["filename"].unique()
@@ -84,7 +86,7 @@ class BirdCLEFDataset(Dataset):
         if "duration" in self.data_frame.iloc[idx] and not np.isnan(self.data_frame.iloc[idx]["duration"]):
             return self.data_frame.iloc[idx]["duration"]
         duration = BirdCLEFDataset.get_file_duration(
-            os.path.join(self.data_folder, self.data_frame.iloc[idx]["filename"])
+            os.path.join(self.audio_folder, self.data_frame.iloc[idx]["filename"])
         )
         return duration 
     
@@ -182,7 +184,7 @@ class BirdCLEFDataset(Dataset):
         return len(self.filenames)
 
     def load_one(self, id_, offset, duration):
-        fp = os.path.join(self.data_folder, id_)
+        fp = os.path.join(self.audio_folder, id_)
         try:
             wav, sr = librosa.load(fp, sr=None, offset=offset, duration=duration)
         except:

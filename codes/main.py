@@ -20,7 +20,7 @@ def parse_cfg():
 
 
 def save_cfg(cfg: dict):
-    cfg.experiment_path = os.path.join(".", "experiments", cfg.experiment_name)
+    cfg.experiment_path = os.path.join(".", "experiments", cfg.experiment_name, cfg.logger_params.version if cfg.logger_params.version is not None else "")
     if not os.path.exists(cfg.experiment_path):
         os.makedirs(cfg.experiment_path)
     with open(os.path.join(cfg.experiment_path, "config.yaml"), "w") as f:
