@@ -12,8 +12,10 @@ import pytorch_lightning as pl
 from dataset.datamodule import DataModule
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning.plugins import CheckpointIO
+from pytorch_lightning.plugins import CheckpointIO, TorchCheckpointIO
 from pytorch_lightning.utilities import rank_zero_only
+#import ordered dict
+from collections import OrderedDict
 # from pl_bolts.callbacks import ORTCallback
 
 
@@ -39,29 +41,22 @@ class LogCodeAndConfigCallback(pl.Callback):
         trainer.logger.experiment.config.update({**self.logger_cfg}, allow_val_change=True)
 
 
-# class SaveTorchScriptCheckpointIO(CheckpointIO):
-#     def __init__(self, pl_module: str, pl_module_params: dict, dummy_input) -> None:
-#         super().__init__()
-#         print(pl_module, pl_module_params)
-#         self.pl_module:pl.LightningModule = utils.get_obj(pl_module)(pl_module_params)
-#         self.dummy_input = dummy_input
+class SavePickleModelCheckpointIO(TorchCheckpointIO):
+    def __init__(self, model: str, model_params: dict) -> None:
+        super().__init__()
+        self.model:nn.Module = utils.get_obj(model)(**model_params)
 
-#     def save_checkpoint(self, checkpoint, path, storage_options=None):
-#         # Save jit
-#         self.pl_module.load_state_dict(checkpoint['state_dict'])
-#         traced = torch.jit.trace(
-#             self.pl_module.model, self.dummy_input, strict=False
-#         )
-#         traced.save(path.replace('.ckpt', '_jit.pt'))
-#         # Save .ckpt
-#         super().save_checkpoint(checkpoint, path, storage_options=storage_options)
-    
-#     def load_checkpoint(self, path, map_location: Any | None = None) -> Dict[str, Any]:
-#         return super().load_checkpoint(path, map_location)
+    def save_checkpoint(self, checkpoint, path, storage_options=None):
+        # Save .pickle
+        state_dict = OrderedDict([(k.replace('model.', ''), v) for k, v in checkpoint['state_dict'].items()])
+        self.model.load_state_dict(state_dict)
+        torch.save(self.model, path.replace('.ckpt', '_pickle.pt'))
+        # Save .ckpt
+        super().save_checkpoint(checkpoint, path, storage_options=storage_options)
 
-#     def remove_checkpoint(self, path) -> None:
-#         super().remove_checkpoint(path.replace('.ckpt', '_jit.pt'))
-#         super().remove_checkpoint(path)
+    def remove_checkpoint(self, path) -> None:
+        super().remove_checkpoint(path)
+        os.remove(path.replace('.ckpt', '_pickle.pt'))
         
 
 def train(cfg: dict):
@@ -79,11 +74,7 @@ def train(cfg: dict):
     trainer = Trainer(
         logger=logger,
         callbacks=callbacks,
-        # plugins=[SaveTorchScriptCheckpointIO(
-        #     cfg.lightning_module,
-        #     cfg.lightning_module_params,
-        #     utils.get_obj(cfg.datamodule_params.dataset).dummy_input()
-        # )],
+        plugins=[SavePickleModelCheckpointIO(cfg.lightning_module_params.model, cfg.lightning_module_params.model_params)],
         **cfg.trainer_params
     )
     trainer.fit(
