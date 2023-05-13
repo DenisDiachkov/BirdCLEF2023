@@ -41,6 +41,7 @@ class BaseModule(LightningModule, ABC):
         batch['output'] = self(batch)
         loss = self.calc_loss(batch).mean()
         self.log('train_loss', loss, prog_bar=True, sync_dist=True)
+        self.log('lr', self.scheduler.get_last_lr()[0], prog_bar=True, sync_dist=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -56,11 +57,14 @@ class BaseModule(LightningModule, ABC):
     def configure_optimizers(self):
         if self.optimizer is None:
             return None
-        if not isinstance(self.optimizer, list):
-            self.optimizer = [self.optimizer]
-        if not isinstance(self.scheduler, list):
-            self.scheduler = [self.scheduler]
-        return self.optimizer, self.scheduler
+        # if not isinstance(self.optimizer, list):
+        #     self.optimizer = [self.optimizer]
+        # if not isinstance(self.scheduler, list):
+        #     self.scheduler = [self.scheduler]
+        return {
+            'optimizer': self.optimizer, 
+            'scheduler': self.scheduler
+        }
 
 
 class BirdCLEFModule(BaseModule):
