@@ -120,7 +120,6 @@ class BirdCLEFDataset(Dataset):
         return librosa.get_duration(y=sound, sr=sr)
 
     def __getitem__(self, idx):
-
         if self.mode == "train":
             row = self.data_frame.iloc[idx]
             fn = row["filename"]
@@ -151,7 +150,6 @@ class BirdCLEFDataset(Dataset):
         else:
             offset = 0.0
             duration = self.wav_crop_len
-
         wav = self.load_one(fn, offset, duration)
         if wav.shape[0] < (self.wav_crop_len * self.sample_rate):
             pad = int(self.wav_crop_len * self.sample_rate - wav.shape[0])

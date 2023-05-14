@@ -84,8 +84,10 @@ def train(cfg: dict):
         )],
         **cfg.trainer_params
     )
+    datamodule=DataModule(cfg.mode, **cfg.datamodule_params)
+    torch.save(datamodule, os.path.join(cfg.experiment_path, 'datamodule.pickle'))
     trainer.fit(
         utils.get_instance(cfg.lightning_module, cfg.lightning_module_params),
-        datamodule=DataModule(cfg.mode, **cfg.datamodule_params), 
+        datamodule=datamodule,
         ckpt_path=cfg.resume_path
     )
