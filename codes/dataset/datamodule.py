@@ -37,7 +37,6 @@ class DataModule(LightningDataModule):
 
     def setup_test_data(self, cfg):
         cls = pickle.loads(self.dataset_cls)
-        exec(cls)
         self.data_test = cls(**self.dataset_test_params | cfg)
         
     def train_dataloader(self):
