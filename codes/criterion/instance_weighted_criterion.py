@@ -7,9 +7,9 @@ class InstanceWeightedCriterion(nn.Module):
     def __init__(self, criterion):
         super(InstanceWeightedCriterion, self).__init__()
         if isinstance(criterion, dict):
-            self.criterion = utils.get_obj(criterion.criterion)(**criterion.criterion_params)
+            self.criterion = utils.get_instance(criterion.criterion, criterion.criterion_params)
         elif isinstance(criterion, str):
-            self.criterion = utils.get_obj(criterion)()
+            self.criterion = utils.get_instance(criterion)
         elif isinstance(criterion, torch.nn.Module):
             self.criterion = criterion
     

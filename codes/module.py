@@ -7,27 +7,18 @@ from abc import ABC, abstractmethod
 
 
 class BaseModule(LightningModule, ABC):
-    @dispatch(torch.nn.Module, torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler, torch.nn.Module)
     def __init__(
-        self, 
-        model: torch.nn.Module,
-        optimizer: torch.optim.Optimizer,
-        scheduler: torch.optim.lr_scheduler._LRScheduler,
-        criterion: torch.nn.Module,
-    ):
+            self, 
+            model:str, model_params: dict, 
+            optimizer:str=None, optimizer_params: dict = None, 
+            scheduler:str=None, scheduler_params: dict = None, 
+            criterion:str=None, criterion_params: dict = None
+        ):
         super().__init__()
-        self.model = model
-        self.optimizer = optimizer
-        self.scheduler = scheduler
-        self.criterion = criterion
-    
-    @dispatch(dict)
-    def __init__(self, cfg: dict):
-        super().__init__()
-        self.model = utils.get_obj(cfg.model)(**cfg.model_params)
-        self.optimizer = utils.get_obj(cfg.optimizer)(self.model.parameters(), **cfg.optimizer_params) if 'optimizer' in cfg else None
-        self.scheduler = utils.get_obj(cfg.scheduler)(self.optimizer, **cfg.scheduler_params) if 'scheduler' in cfg else None
-        self.criterion = utils.get_obj(cfg.criterion)(**cfg.criterion_params) if 'criterion' in cfg else None
+        self.model = utils.get_instance(model, model_params)
+        self.optimizer = utils.get_instance(optimizer, {'params':self.model.parameters()} | optimizer_params)
+        self.scheduler = utils.get_instance(scheduler, {'optimizer':self.optimizer} | scheduler_params) 
+        self.criterion = utils.get_instance(criterion, criterion_params)
     
     @abstractmethod
     def forward(self, *args: Any, **kwargs: Any):
@@ -57,10 +48,6 @@ class BaseModule(LightningModule, ABC):
     def configure_optimizers(self):
         if self.optimizer is None:
             return None
-        # if not isinstance(self.optimizer, list):
-        #     self.optimizer = [self.optimizer]
-        # if not isinstance(self.scheduler, list):
-        #     self.scheduler = [self.scheduler]
         return {
             'optimizer': self.optimizer, 
             'scheduler': self.scheduler

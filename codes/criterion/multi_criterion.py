@@ -8,9 +8,9 @@ class MultiCriterion(torch.nn.Module):
         self.criterions = []
         for criterion in criterions:
             if isinstance(criterion, dict):
-                self.criterions.append(utils.get_obj(criterion.criterion)(**criterion.criterion_params))
+                self.criterions.append(utils.get_instance(criterion.criterion, criterion.criterion_params))
             elif isinstance(criterion, str):
-                self.criterions.append(utils.get_obj(criterion)())
+                self.criterions.append(utils.get_instance(criterion))
             elif isinstance(criterion, torch.nn.Module):
                 self.criterions.append(criterion)
         self.criterion_weights = criterion_weights

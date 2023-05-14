@@ -42,15 +42,18 @@ class LogCodeAndConfigCallback(pl.Callback):
 
 
 class SavePickleModelCheckpointIO(TorchCheckpointIO):
-    def __init__(self, model: str, model_params: dict) -> None:
+    def __init__(self, lightning_module: str, lightning_module_params: dict) -> None:
         super().__init__()
-        self.model:nn.Module = utils.get_obj(model)(**model_params)
+        self.module = utils.get_instance(
+            lightning_module , 
+            lightning_module_params | {'optimizer': None, 'scheduler': None}
+        )
 
     def save_checkpoint(self, checkpoint, path, storage_options=None):
         # Save .pickle
-        state_dict = OrderedDict([(k.replace('model.', ''), v) for k, v in checkpoint['state_dict'].items()])
-        self.model.load_state_dict(state_dict)
-        torch.save(self.model, path.replace('.ckpt', '_pickle.pt'))
+        state_dict = OrderedDict([(k.replace('model.', ''), v) for k, v in checkpoint['state_dict'].items() if k.startswith('model.')])
+        self.module.model.load_state_dict(state_dict)
+        torch.save(self.module, path.replace('.ckpt', '_pickle.pt'))
         # Save .ckpt
         super().save_checkpoint(checkpoint, path, storage_options=storage_options)
 
@@ -64,8 +67,9 @@ def train(cfg: dict):
         os.makedirs(cfg.experiment_path)
     logger = _Wandblogger(**cfg.logger_params) if not cfg.no_logging else None
     callbacks = [
-        utils.get_obj(callback.callback)(
-            **callback.callback_params | ({"dirpath": cfg.experiment_path} if callback.callback.endswith("ModelCheckpoint") else {})
+        utils.get_instance(
+            callback.callback,
+            callback.callback_params | ({"dirpath": cfg.experiment_path} if callback.callback.endswith("ModelCheckpoint") else {})
         ) 
         for callback in cfg.trainer_callbacks
     ]
@@ -74,11 +78,14 @@ def train(cfg: dict):
     trainer = Trainer(
         logger=logger,
         callbacks=callbacks,
-        plugins=[SavePickleModelCheckpointIO(cfg.lightning_module_params.model, cfg.lightning_module_params.model_params)],
+        plugins=[SavePickleModelCheckpointIO(
+            cfg.lightning_module, 
+            cfg.lightning_module_params
+        )],
         **cfg.trainer_params
     )
     trainer.fit(
-        utils.get_obj(cfg.lightning_module)(cfg.lightning_module_params),
+        utils.get_instance(cfg.lightning_module, cfg.lightning_module_params),
         datamodule=DataModule(cfg.mode, **cfg.datamodule_params), 
         ckpt_path=cfg.resume_path
     )

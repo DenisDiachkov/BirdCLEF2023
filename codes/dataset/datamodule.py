@@ -22,10 +22,10 @@ class DataModule(LightningDataModule):
     ):
         super().__init__()
         if mode == 'train':
-            self.data_train = utils.get_obj(dataset)(mode='train', **dataset_params | train_dataset_params)
-            self.data_val = utils.get_obj(dataset)(mode='val', **dataset_params | val_dataset_params)
+            self.data_train = utils.get_instance(dataset, {'mode': 'train'} | dataset_params | train_dataset_params)
+            self.data_val = utils.get_instance(dataset, {'mode': 'val'} | dataset_params | val_dataset_params)
         if mode == 'test':
-            self.data_test = utils.get_obj(dataset)(mode='test', **dataset_params | test_dataset_params)
+            self.data_test = utils.get_instance(dataset, {'mode': 'test'} | dataset_params | test_dataset_params)
 
         self.dataloader_params = dataloader_params
         self.train_dataloader_params = train_dataloader_params
