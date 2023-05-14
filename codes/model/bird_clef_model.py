@@ -11,6 +11,7 @@ import timm
 from .gem import GeM
 from .mixup import Mixup
 
+from timm.models.layers.norm_act import BatchNormAct2d
 
 class BirdCLEFModel(nn.Module):
     def __init__(
@@ -18,20 +19,32 @@ class BirdCLEFModel(nn.Module):
         n_classes,
         sample_rate=32000,
         window_size=2048,
-        f_min=50,
-        f_max=16000,
-        power=2.0,
-        mel_bins=128,
-        hop_size=512,
-        top_db=80.0,
-        backbone="tf_efficientnet_b0_ns",
+        ################################
+        # how it was here originally: ##
+        ################################
+        # f_min=50,
+        # f_max=16000,
+        # power=2.0,
+        # mel_bins=128, # was 128, mismatch with BirdCLEF.yaml. 
+        # hop_size=512,
+        # top_db=80.0,
+        f_min=16, #copypasted from BirdCLEF.yaml
+        f_max=16386, #copypasted from BirdCLEF.yaml
+        power=2.0, #copypasted from BirdCLEF.yaml
+        mel_bins=256, #copypasted from BirdCLEF.yaml
+        hop_size=512, #copypasted from BirdCLEF.yaml
+        top_db=80.0, #copypasted from BirdCLEF.yaml
+        # backbone="tf_efficientnet_b0_ns",
+        backbone="resnet34",
         pretrained=True,
         pretrained_weights=None,
         in_channels=1,
-        mix_beta=0.2,
+        # mix_beta=0.2,
+        mix_beta=1.0,
         wav_crop_len=5,
         mel_norm=False,
-        mixup1=False,
+        # mixup1=False,
+        mixup1=True,
         mixup2=False,
     ):
         super(BirdCLEFModel, self).__init__()
@@ -60,11 +73,22 @@ class BirdCLEFModel(nn.Module):
             global_pool="",
             in_chans=in_channels,
         )
+        
 
+        ### wrong bug fix! TODO: fix backbone arch.!
+        # change BatchNorm according to config(?) 
+        # bnact2d = BatchNormAct2d(num_features=64, eps=0.001, momentum=0.1, track_running_stats=True, act_layer=nn.SiLU)
+        # self.backbone.bn1 = bnact2d
+
+        ##########################################   
+        # mismatch with config, so outcommented: #
+        ##########################################
         if "efficientnet" in backbone:
             backbone_out = self.backbone.num_features
         else:
             backbone_out = self.backbone.feature_info[-1]["num_chs"]
+        
+        # backbone_out = 512
 
         self.global_pool = GeM()
 
