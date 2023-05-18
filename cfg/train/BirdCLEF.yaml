@@ -6,6 +6,9 @@ experiment_name: &experiment_name Test
 resume_path: null
 no_logging: False
 
+environ_vars:
+  WANDB_SILENT: !!bool True
+
 logger_params:
   project: !!str 'BirdCLEF2023'
   name: *experiment_name
@@ -20,8 +23,8 @@ trainer_params:
   num_sanity_val_steps: !!int 1
   max_epochs: 100
   precision: 16
-  limit_train_batches: 1.0
-  limit_val_batches: 1.0
+  limit_train_batches: 1
+  limit_val_batches: 1
 trainer_callbacks: [
   {
     callback: pytorch_lightning.callbacks.early_stopping.EarlyStopping,
@@ -90,23 +93,22 @@ lightning_module_params:
 datamodule_params:
   dataset: dataset.dataset.BirdCLEFDataset
   dataset_params:
-    csv_path: input/birdclef-2023/new_train_metadata.csv
-    audio_folder: input/birdclef-2023/train_audio
+    csv_path: input/new_train_metadata.csv
+    audio_folder: input/train_audio
     wav_crop_len: *wav_crop_len
     sample_rate: *sample_rate
     albumentations: null
-    duration_preload: True
   train_dataset_params:
     min_rating: 2.0
 
   dataloader_params:
     shuffle: !!bool True
-    num_workers: !!int 8
+    num_workers: !!int 1
     sampler: null
   train_dataloader_params:
-    batch_size: !!int 32
+    batch_size: !!int 1
     shuffle: !!bool True
   val_dataloader_params:
-    batch_size: !!int 8
+    batch_size: !!int 1
     shuffle: !!bool False
 

@@ -25,19 +25,15 @@ class DataModule(LightningDataModule):
         if mode == 'train':
             self.data_train = utils.get_instance(dataset, {'mode': 'train'} | dataset_params | train_dataset_params)
             self.data_val = utils.get_instance(dataset, {'mode': 'val'} | dataset_params | val_dataset_params)
-        self.data_test = utils.get_instance(dataset, {'mode': 'test'} | dataset_params | test_dataset_params)
+        elif mode == 'test':
+            self.data_test = utils.get_instance(dataset, {'mode': 'test'} | dataset_params | test_dataset_params)
 
-        self.dataset_cls = pickle.dumps(utils.get_cls(dataset))
         self.dataset_test_params = {'mode': 'test'} | dataset_params | test_dataset_params
 
         self.dataloader_params = dataloader_params
         self.train_dataloader_params = train_dataloader_params
         self.val_dataloader_params = val_dataloader_params
         self.test_dataloader_params = test_dataloader_params
-
-    def setup_test_data(self, cfg):
-        cls = pickle.loads(self.dataset_cls)
-        self.data_test = cls(**self.dataset_test_params | cfg)
         
     def train_dataloader(self):
         return DataLoader(

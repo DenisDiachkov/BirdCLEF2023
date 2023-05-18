@@ -29,6 +29,9 @@ def save_cfg(cfg: dict):
 
 def main():
     cfg = parse_cfg()
+    if cfg.environ_vars is not None:
+        for k, v in cfg.environ_vars.items():
+            os.environ[k] = str(v)
     if cfg.trainer_params.deterministic:
         utils.fix_seed(cfg['seed'])
     if cfg.wall:

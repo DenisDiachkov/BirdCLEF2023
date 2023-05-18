@@ -1,14 +1,18 @@
 mode: !!str 'test'
 wall: !!bool False
 seed: &seed !!int 42
-checkpoint_path: experiments/Test/nojit_checkpointing/best_Epoch=epoch=0_Loss=val_loss=0.84_pickle.pt
-datamodule_path: experiments/Test/nojit_checkpointing/datamodule.pickle
-
+checkpoint_path: experiments/_build/nojit_checkpointin/best_Epoch=epoch=34_Loss=val_loss=0.08_pickle.pt
+environ_vars: null
 trainer_params:
   deterministic: !!bool True
   devices: [0]
   accelerator: !!str 'cuda'
 
-dataset_params:
-  csv_path: input/birdclef-2023/new_train_metadata.csv
-  wav_crop_len:  !!int 2
+datamodule_params:
+  dataset: dataset.dataset.BirdCLEFDataset
+  dataset_params:
+    csv_path: input/new_train_metadata.csv
+    audio_folder: input/train_audio
+    wav_crop_len:  !!int 26
+    sample_rate: 32000
+    albumentations: null

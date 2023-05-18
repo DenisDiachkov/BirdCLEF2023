@@ -29,16 +29,16 @@ class _Wandblogger(WandbLogger):
 
 
 class LogCodeAndConfigCallback(pl.Callback):
-    def __init__(self, logger_params) -> None:
+    def __init__(self, config) -> None:
         super().__init__()
-        self.logger_params = logger_params
+        self.config = config
 
     @rank_zero_only
     def on_fit_start(self, trainer, pl_module):
         trainer.logger.experiment.log_code(
             root=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         )
-        trainer.logger.experiment.config.update({**self.logger_cfg}, allow_val_change=True)
+        trainer.logger.experiment.config.update({**self.config}, allow_val_change=True)
 
 
 class SavePickleModelCheckpointIO(TorchCheckpointIO):
@@ -85,7 +85,6 @@ def train(cfg: dict):
         **cfg.trainer_params
     )
     datamodule=DataModule(cfg.mode, **cfg.datamodule_params)
-    torch.save(datamodule, os.path.join(cfg.experiment_path, 'datamodule.pickle'))
     trainer.fit(
         utils.get_instance(cfg.lightning_module, cfg.lightning_module_params),
         datamodule=datamodule,
