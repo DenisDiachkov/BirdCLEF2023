@@ -1,7 +1,7 @@
 mode: !!str 'test'
 wall: !!bool False
 seed: &seed !!int 42
-checkpoint_path: experiments/_build/nojit_checkpointin/best_Epoch=epoch=34_Loss=val_loss=0.08_pickle.pt
+checkpoint_path: experiments/Test/best_Epoch=epoch=1_Loss=val_loss=0.92.ckpt
 environ_vars: null
 trainer_params:
   deterministic: !!bool True

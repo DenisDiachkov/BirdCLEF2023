@@ -16,15 +16,15 @@ def test(cfg: dict):
         logger=False,
         **cfg.trainer_params,
     )
-
     if cfg.checkpoint_path.endswith('.ckpt'):
-        module = utils.get_instance(cfg.lightning_module, cfg.lightning_module_params)
-        module = module.load_from_checkpoint(cfg.checkpoint_path)
-    elif cfg.checkpoint_path.endswith('_pickle.pt'):
-        module = torch.load(cfg.checkpoint_path)
+        train_cfg = torch.load(cfg.checkpoint_path)['cfg']
+        module = utils.get_instance(train_cfg.lightning_module, train_cfg.lightning_module_params)
+    else:
+        raise NotImplementedError
     module.test_step = get_new_test_func(module.test_step)
     datamodule=DataModule(cfg.mode, **cfg.datamodule_params)
     tester.test(
         module,
-        datamodule=datamodule
+        datamodule=datamodule,
+        ckpt_path=cfg.checkpoint_path
     )

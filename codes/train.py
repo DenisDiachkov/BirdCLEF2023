@@ -41,26 +41,15 @@ class LogCodeAndConfigCallback(pl.Callback):
         trainer.logger.experiment.config.update({**self.config}, allow_val_change=True)
 
 
-class SavePickleModelCheckpointIO(TorchCheckpointIO):
-    def __init__(self, lightning_module: str, lightning_module_params: dict) -> None:
+class CheckpointIO(TorchCheckpointIO):
+    def __init__(self, cfg) -> None:
         super().__init__()
-        self.module = utils.get_instance(
-            lightning_module , 
-            lightning_module_params | {'optimizer': None, 'scheduler': None}
-        )
+        self.cfg = cfg
 
     def save_checkpoint(self, checkpoint, path, storage_options=None):
-        # Save .pickle
-        state_dict = OrderedDict([(k.replace('model.', ''), v) for k, v in checkpoint['state_dict'].items() if k.startswith('model.')])
-        self.module.model.load_state_dict(state_dict)
-        torch.save(self.module, path.replace('.ckpt', '_pickle.pt'))
-        # Save .ckpt
+        checkpoint['cfg'] = self.cfg
         super().save_checkpoint(checkpoint, path, storage_options=storage_options)
 
-    def remove_checkpoint(self, path) -> None:
-        super().remove_checkpoint(path)
-        os.remove(path.replace('.ckpt', '_pickle.pt'))
-        
 
 def train(cfg: dict):
     if not os.path.exists(cfg.experiment_path):
@@ -78,10 +67,7 @@ def train(cfg: dict):
     trainer = Trainer(
         logger=logger,
         callbacks=callbacks,
-        plugins=[SavePickleModelCheckpointIO(
-            cfg.lightning_module, 
-            cfg.lightning_module_params
-        )],
+        plugins=[CheckpointIO(cfg)],
         **cfg.trainer_params
     )
     datamodule=DataModule(cfg.mode, **cfg.datamodule_params)
